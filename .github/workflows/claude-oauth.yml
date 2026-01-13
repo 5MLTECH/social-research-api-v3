@@ -1,0 +1,43 @@
+name: Claude OAuth
+
+on:
+  workflow_dispatch:
+
+jobs:
+  oauth:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: OAuth Device Flow
+        run: |
+          echo "Starting OAuth device flow..."
+          
+          # Request device code
+          RESPONSE=$(curl -X POST https://api.github.com/login/device/code \
+            -H "Accept: application/json" \
+            -d '{"client_id":"Iv23liwCFfn5D0i6s03O","scope":"repo"}')
+          
+          DEVICE_CODE=$(echo $RESPONSE | jq -r '.device_code')
+          USER_CODE=$(echo $RESPONSE | jq -r '.user_code')
+          VERIFICATION_URI=$(echo $RESPONSE | jq -r '.verification_uri')
+          
+          echo "::notice::Go to $VERIFICATION_URI and enter code: $USER_CODE"
+          echo "Verification URI: $VERIFICATION_URI"
+          echo "User Code: $USER_CODE"
+          
+          # Poll for completion
+          for i in {1..30}; do
+            sleep 10
+            TOKEN_RESPONSE=$(curl -X POST https://api.github.com/login/oauth/access_token \
+              -H "Accept: application/json" \
+              -d '{"client_id":"Iv23liwCFfn5D0i6s03O","device_code":"'$DEVICE_CODE'","grant_type":"urn:ietf:params:oauth:grant-type:device_code"}')
+            
+            ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.access_token')
+            
+            if [ "$ACCESS_TOKEN" != "null" ]; then
+              echo "::notice::OAuth successful! Token: $ACCESS_TOKEN"
+              break
+            fi
+          done
