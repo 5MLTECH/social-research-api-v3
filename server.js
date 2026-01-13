@@ -53,20 +53,25 @@ app.get('/health', (req, res) => {
 
 app.post('/api/research', async (req, res) => {
   try {
-    const { brand_config, campaign_brief } = req.body;
+const { brand_config, campaign_brief, prompt } = req.body;
 
-    if (!brand_config || !campaign_brief) {
-      return res.status(400).json({
+        // If prompt is provided, create default brand_config and campaign_brief
+        let finalBrandConfig = brand_config;
+        let finalCampaignBrief = campaign_brief;
+
+        if (prompt) {
+                finalBrandConfig = { market: 'Hong Kong', industry: 'General' };
+                finalCampaignBrief = { objective: prompt, target_audience: 'Hong Kong market' };
+              }
+    if (!finalBrandConfig || !finalCampaignBrief) {      return res.status(400).json({
         error: 'Missing brand_config or campaign_brief in request body'
       });
     }
 
     const userMessage = `BRAND CONFIG:
-${JSON.stringify(brand_config, null, 2)}
-
+${JSON.stringify(finalBrandConfig, null, 2)}
 CAMPAIGN BRIEF:
-${JSON.stringify(campaign_brief, null, 2)}
-
+${JSON.stringify(finalCampaignBrief, null, 2)}
 Generate the campaign research result.`;
 
     const message = await anthropic.messages.create({
