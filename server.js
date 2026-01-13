@@ -79,38 +79,7 @@ Generate the campaign research result.`;
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [
-      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',              role: 'user',
-content: userMessage        }
-      ]
-    });
-
-    const responseText = message.content[0].text;
-
-    let campaign_research_result;
-    try {
-      campaign_research_result = JSON.parse(responseText);
-    } catch (parseError) {
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        campaign_research_result = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('Failed to parse Claude response as JSON');
-      }
-    }
-
-    res.json({
-      campaign_research_result
-    });
-
-  } catch (error) {
-    console.error('Error processing research request:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
-    });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+      {
+            role: 'user',
+            content: userMessage
+          }
