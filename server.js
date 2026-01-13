@@ -53,17 +53,18 @@ app.get('/health', (req, res) => {
 
 app.post('/api/research', async (req, res) => {
   try {
-const { brand_config, campaign_brief, prompt } = req.body;
+    const { brand_config, campaign_brief, prompt } = req.body;
 
-        // If prompt is provided, create default brand_config and campaign_brief
-        let finalBrandConfig = brand_config;
-        let finalCampaignBrief = campaign_brief;
+    let finalBrandConfig = brand_config;
+    let finalCampaignBrief = campaign_brief;
 
-        if (prompt) {
-                finalBrandConfig = { market: 'Hong Kong', industry: 'General' };
-                finalCampaignBrief = { objective: prompt, target_audience: 'Hong Kong market' };
-              }
-    if (!finalBrandConfig || !finalCampaignBrief) {      return res.status(400).json({
+    if (prompt) {
+      finalBrandConfig = { market: 'Hong Kong', industry: 'General' };
+      finalCampaignBrief = { objective: prompt, target_audience: 'Hong Kong market' };
+    }
+
+    if (!finalBrandConfig || !finalCampaignBrief) {
+      return res.status(400).json({
         error: 'Missing brand_config or campaign_brief in request body'
       });
     }
@@ -79,7 +80,23 @@ Generate the campaign research result.`;
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [
-      {
-            role: 'user',
-            content: userMessage
-          }
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ]
+    });
+
+    // 假設你要攞第一段文字 content
+    const text = message.content?.[0]?.text || '';
+
+    res.json(JSON.parse(text));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
