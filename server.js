@@ -79,8 +79,7 @@ Generate the campaign research result.`;
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [
-{
-              role: 'user',
+      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',              role: 'user',
 content: userMessage        }
       ]
     });
