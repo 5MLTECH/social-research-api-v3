@@ -52,50 +52,102 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/api/research', async (req, res) => {
+  console.log("=== /api/research REQUEST RECEIVED ===");
+
   try {
     const { brand_config, campaign_brief, prompt } = req.body;
 
-    let finalBrandConfig = brand_config;
-    let finalCampaignBrief = campaign_brief;
+    console.log("Incoming Request Body:", JSON.stringify(req.body, null, 2));
 
-    if (prompt) {
-      finalBrandConfig = { market: 'Hong Kong', industry: 'General' };
-      finalCampaignBrief = { objective: prompt, target_audience: 'Hong Kong market' };
-    }
+    // Determine which config to use
+    const finalBrandConfig = prompt
+      ? { market: "Hong Kong", industry: "General" }
+      : brand_config;
+
+    const finalCampaignBrief = prompt
+      ? { objective: prompt, target_audience: "Hong Kong market" }
+      : campaign_brief;
+
+    console.log("Using finalBrandConfig:", finalBrandConfig);
+    console.log("Using finalCampaignBrief:", finalCampaignBrief);
 
     if (!finalBrandConfig || !finalCampaignBrief) {
-      return res.status(400).json({
-        error: 'Missing brand_config or campaign_brief in request body'
-      });
+      console.warn("Missing required configurations.");
+      return res.status(400).json({ error: "Missing brand_config or campaign_brief" });
     }
 
     const userMessage = `BRAND CONFIG:
 ${JSON.stringify(finalBrandConfig, null, 2)}
+
 CAMPAIGN BRIEF:
 ${JSON.stringify(finalCampaignBrief, null, 2)}
-Generate the campaign research result.`;
 
-    const message = await anthropic.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20250514',
+Generate the campaign research result strictly following the JSON schema.`;
+
+    console.log("Constructed User Message:\n", userMessage);
+
+    // Track request duration
+    console.time("Claude API Duration");
+
+    const claudeRes = await anthropic.messages.create({
+      model: process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022",
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [
         {
-          role: 'user',
-          content: userMessage
+          role: "user",
+          content: [
+            { type: "text", text: userMessage }
+          ]
         }
       ]
     });
 
-    // 假設你要攞第一段文字 content
-    const text = message.content?.[0]?.text || '';
+    console.timeEnd("Claude API Duration");
 
-    res.json(JSON.parse(text));
+    console.log("Claude Response Object:", JSON.stringify(claudeRes, null, 2));
+
+    const raw = claudeRes?.content?.[0]?.text || "";
+
+    console.log("RAW CLAUDE TEXT RESPONSE:", raw);
+
+    // Sanitize incoming text
+    const clean = raw
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    console.log("SANITIZED RESPONSE TEXT:", clean);
+
+    let parsed;
+
+    try {
+      parsed = JSON.parse(clean);
+      console.log("JSON Parsing Successful.");
+    } catch (e) {
+      console.error("JSON Parsing Error:", e);
+      console.error("Failed JSON:", clean);
+
+      return res.status(502).json({
+        error: "Model returned invalid JSON",
+        raw: clean
+      });
+    }
+
+    console.log("=== SUCCESSFULLY RETURNING PARSED JSON ===");
+    res.json(parsed);
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Unhandled Error in /api/research:", error);
+
+    res.status(500).json({
+      error: "Internal server error",
+      details: error?.message
+    });
   }
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
