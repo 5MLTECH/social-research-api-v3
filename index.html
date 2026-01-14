@@ -286,7 +286,7 @@
             if (data.trends && data.trends.length > 0) {
                 html += '<h3 style="margin: 15px 0 10px; color: #667eea;">🔥 Trending Now</h3>';
                 data.trends.forEach(trend => {
-                    html += `<div class="trend-item"><strong>${trend.name}</strong><br><small>${trend.description}</small></div>`;
+                    html += `<div class="trend-item"><strong>${trend.trend_name}</strong><br><small>${trend.relevance}</small></div>`;
                 });
             }
             
