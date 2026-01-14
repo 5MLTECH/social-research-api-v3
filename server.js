@@ -147,6 +147,10 @@ Generate the campaign research result strictly following the JSON schema.`;
   }
 });
 
+app.get("/", (req, res) => {
+  res.send("Social Research API is running");
+});
+
 
 
 app.listen(PORT, () => {
